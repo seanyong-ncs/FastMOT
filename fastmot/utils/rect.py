@@ -36,6 +36,10 @@ def area(tlbr):
 def get_center(tlbr):
     return (tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2
 
+@nb.njit(cache=True,  inline='always')
+def get_bottom_center(tlbr):
+    return (tlbr[0] + tlbr[2]) / 2, tlbr[3]
+
 
 @nb.njit(cache=True, inline='always')
 def to_tlwh(tlbr):

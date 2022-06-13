@@ -8,6 +8,7 @@ import json
 import cv2
 
 import fastmot
+from fastmot.flow import LOGGER
 import fastmot.models
 from fastmot.utils import ConfigDecoder, Profiler
 
@@ -64,6 +65,7 @@ def main():
             fastmot.models.set_label_map(label_map)
 
     stream = fastmot.VideoIO(config.resize_to, args.input_uri, args.output_uri, **vars(config.stream_cfg))
+    counter = fastmot.Counter()
 
     mot = None
     txt = None
@@ -87,7 +89,10 @@ def main():
                     break
 
                 if args.mot:
+                    counter.draw_line(frame)
                     mot.step(frame)
+                    counter.step(mot.visible_tracks())
+                    
                     if txt is not None:
                         for track in mot.visible_tracks():
                             tl = track.tlbr[:2] / config.resize_to * stream.resolution
@@ -96,8 +101,14 @@ def main():
                             txt.write(f'{mot.frame_count},{track.trk_id},{tl[0]:.6f},{tl[1]:.6f},'
                                       f'{w:.6f},{h:.6f},-1,-1,-1\n')
 
+                    # Debug info
+                    # for track in mot.visible_tracks():
+                    #     bottom_center = get_bottom_center(track.tlbr)
+                    #     logger.info(f"{track.trk_id} {bottom_center}")
+                    
                 if args.show:
                     cv2.imshow('Video', frame)
+
                     if cv2.waitKey(1) & 0xFF == 27:
                         break
                 if args.output_uri is not None:

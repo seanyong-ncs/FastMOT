@@ -1,7 +1,7 @@
 import colorsys
 import numpy as np
 import cv2
-from .rect import get_center
+from .rect import get_bottom_center
 
 
 GOLDEN_RATIO = 0.618033988749895
@@ -27,10 +27,10 @@ def draw_detections(frame, detections, color=(255, 255, 255), show_conf=False):
 
 def draw_trajectory(frame, bboxes, trk_id):
     tlbrs = np.reshape(list(bboxes), (len(bboxes), 4))
-    centers = tuple(map(lambda box: get_center(box), tlbrs[::4]))
+    centers = tuple(map(lambda box: get_bottom_center(box), tlbrs[::4]))
     color = get_color(trk_id)
     pts = np.array(centers, dtype=np.int32)
-    cv2.polylines(frame, [pts], False, color, thickness=1)
+    cv2.polylines(frame, [pts], False, color, thickness=8)
 
 
 def draw_klt_bboxes(frame, klt_bboxes, color=(0, 0, 0)):

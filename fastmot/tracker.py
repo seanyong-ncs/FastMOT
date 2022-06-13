@@ -42,7 +42,7 @@ class MultiTracker:
         max_age : int, optional
             Max number of undetected frames allowed before a track is terminated.
             Note that skipped frames are not included.
-        age_penalty : int, optional
+        age_penalty : int, optional 
             Scale factor to penalize KLT measurements for tracks with large age.
         motion_weight : float, optional
             Weight for motion term in matching cost function.

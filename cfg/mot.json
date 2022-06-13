@@ -3,7 +3,7 @@
 
     "stream_cfg": {
         "resolution": [1920, 1080],
-        "frame_rate": 30,
+        "frame_rate": 24,
         "buffer_size": 10
     },
 
@@ -43,13 +43,13 @@
         "tracker_cfg": {
             "max_age": 6,
             "age_penalty": 2,
-            "motion_weight": 0.2,
+            "motion_weight": 0.3,
             "max_assoc_cost": 0.8,
             "max_reid_cost": 0.6,
             "iou_thresh": 0.4,
-            "duplicate_thresh": 0.8,
-            "occlusion_thresh": 0.7,
-            "conf_thresh": 0.5,
+            "duplicate_thresh": 0.9,
+            "occlusion_thresh": 0.8,
+            "conf_thresh": 0.4,
             "confirm_hits": 1,
             "history_size": 50,
 
@@ -96,7 +96,7 @@
             "draw_klt": false,
             "draw_obj_flow": false,
             "draw_bg_flow": false,
-            "draw_trajectory": false
+            "draw_trajectory": true
 
         }
     }

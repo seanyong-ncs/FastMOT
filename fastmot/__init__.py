@@ -1,3 +1,4 @@
+from .counter import Counter
 from .videoio import VideoIO
 from .mot import MOT
 from .feature_extractor import FeatureExtractor
