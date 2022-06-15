@@ -89,9 +89,8 @@ def main():
                     break
 
                 if args.mot:
-                    counter.draw_line(frame)
                     mot.step(frame)
-                    counter.step(mot.visible_tracks())
+                    counter.step(frame, mot.visible_tracks())
                     
                     if txt is not None:
                         for track in mot.visible_tracks():
