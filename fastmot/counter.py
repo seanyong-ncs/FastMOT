@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import logging
 
+from fastmot.utils.visualization import get_color
 from fastmot.utils.rect import get_bottom_center
 
 LOGGER = logging.getLogger(__name__)
@@ -16,8 +17,8 @@ class TrackedPath:
         self.suppression = suppression
 
 class DuplicateSuppressor():
-    def __init__(self, suppression_frames = 10):
-        self.suppression_frames = suppression_frames
+    def __init__(self, suppression_frames = None):
+        self.suppression_frames = 10 if suppression_frames == None else suppression_frames
         self.suppressed_paths = []
 
     def suppress(self, id):
@@ -47,50 +48,78 @@ class DuplicateSuppressor():
         for index in reversed(delete_indices):
             self.suppressed_paths.pop(index)
 
-
-class Counter:
-    def __init__(self):
-        self.line = ((579, 465),(766, 450))
-        self.np_line = np.asarray(self.line)
-        self.line_color = (0, 170, 0)
+class BoundaryDetector:
+    total_count = 0
+    def __init__(self, line_pairs, enter_from_left=True, suppression_frames = None):
+        self.id = BoundaryDetector.total_count
+        BoundaryDetector.total_count += 1
+        self.color = get_color(self.id)
         self.thickness = 6
-        self.tracked_paths = []
         self.enter_count = 0
         self.exit_count = 0
-        self.ds = DuplicateSuppressor(120)
+        self.enter_from_left = enter_from_left # As viewed from last_two_tracksnt B to A, where Bx >= Ax
+        self.line_pairs = line_pairs # [((p0x, p0y), (p1x, p1y)), ...]
+        self.ds = DuplicateSuppressor(suppression_frames)
+
+    
+    def intersect(self, last_two_tracks):
+        if self.is_above_line(last_two_tracks[1]) and not self.is_above_line(last_two_tracks[0]):
+            print(1)
+            return 1
+        elif not self.is_above_line(last_two_tracks[1]) and self.is_above_line(last_two_tracks[0]):
+            print(-1)
+            return -1
+        else:
+            return 0
+    
+    def is_above_line(self, last_two_tracks):
+        return np.cross(np.asarray(last_two_tracks)-np.asarray(self.line_pairs[0]), np.asarray(self.line_pairs[1])-np.asarray(self.line_pairs[0])) > 0
+
+
+    def process(self, last_two_tracks, track_id):
+        self.ds.step()
+        if self.ds.check_unsuppressed(track_id):
+            if (self.intersect(last_two_tracks) == 1 and self.enter_from_left) or (self.intersect(last_two_tracks) == -1 and not self.enter_from_left):
+                LOGGER.info(f"Enter Room:   person      {track_id}")
+                self.enter_count += 1
+            elif(self.intersect(last_two_tracks) == 1 and not self.enter_from_left) or (self.intersect(last_two_tracks) == -1 and self.enter_from_left):
+                LOGGER.info(f"Exit Room:    person      {track_id} ")
+                self.exit_count += 1
+            else:
+                return
+            self.ds.suppress(track_id)
+                
+               
+
+class Counter:
+    def __init__(self, draw=True):
+        self.bd_list = self.populate_bd_list()
+        self.draw = draw
+
+    def populate_bd_list(self):
+        # Read from file later, hardcode for now
+        my_bd = BoundaryDetector(((579, 465),(766, 450)), suppression_frames=90)
+        my_bd_2 = BoundaryDetector(((539, 465),(649, 650)), enter_from_left = False, suppression_frames=90)
+        return [my_bd, my_bd_2]
 
     def step(self, frame, tracks):
-        self.ds.step()
-        self.draw_info(frame)
+        if self.draw:
+            self.draw_info(frame)
+
         for track in tracks:
             tlbrs = np.reshape(list(track.bboxes), (len(track.bboxes), 4))
             bottom_centers = tuple(map(lambda box: get_bottom_center(box), tlbrs[::4]))
-            poi = bottom_centers[-2:] #Get latest 2 points to check if line is crossed 
-            
-            if self.ds.check_unsuppressed(track.trk_id):
-                if self.is_above_line(poi[1]) and not self.is_above_line(poi[0]):
-                    self.ds.suppress(track.trk_id)
-                    LOGGER.info(f"Enter Room:   person      {track.trk_id}")
-                    self.enter_count += 1
-                elif not self.is_above_line(poi[1]) and self.is_above_line(poi[0]):
-                    self.ds.suppress(track.trk_id)
-                    LOGGER.info(f"Exit Room:    person      {track.trk_id} ")
-                    self.exit_count += 1
-        
-        
-
-    @staticmethod
-    def get_bottom_centers(track):
-        tlbrs = np.reshape(list(track.bboxes), (len(track.bboxes), 4))
-        bottom_centers = tuple(map(lambda box: get_bottom_center(box), tlbrs[::4]))
+            last_two_tracks = bottom_centers[-2:] #Get latest 2 last_two_tracks to check if line is crossed
+            for bd in self.bd_list:
+                bd.process(last_two_tracks, track.trk_id) 
 
     def draw_info(self, frame):
-        cv2.line(frame, self.line[0], self.line[1], self.line_color, self.thickness)
-        cv2.rectangle(frame, (413, 215), (557,263), color_gilded, -1) 
-        cv2.rectangle(frame, (413, 287), (557,335), color_aqua_lake, -1)
-        cv2.putText(frame, f"Enter: {self.enter_count}", (418, 251), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
-        cv2.putText(frame, f"Exit:  {self.exit_count}", (418, 323), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+        for index, bd in enumerate(self.bd_list):
+            offset = index * 40
+            cv2.line(frame, bd.line_pairs[0], bd.line_pairs[1], bd.color, bd.thickness)
+            cv2.rectangle(frame, (10, 10 + offset), (240, 40 + offset), bd.color, -1)
+            cv2.putText(frame, f"Enter: {bd.enter_count}", (15, 30 + offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA) 
+            cv2.putText(frame, f"Exit: {bd.exit_count}", (145, 30 + offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA) 
 
-    def is_above_line(self, point):
-        return np.cross(np.asarray(point)-self.np_line[0], self.np_line[1]-self.np_line[0]) > 0
+
 
