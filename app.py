@@ -68,7 +68,7 @@ def main():
             fastmot.models.set_label_map(label_map)
 
     stream = fastmot.VideoIO(config.resize_to, args.input_uri, args.output_uri, **vars(config.stream_cfg))
-    counter = fastmot.Counter(boundary_cfg_path=args.boundary_cfg)
+    counter = fastmot.Counter(boundary_cfg_path=args.boundary_cfg, frame_size=config.resize_to)
 
     mot = None
     txt = None

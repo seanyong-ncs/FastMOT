@@ -3,6 +3,7 @@ import numpy as np
 import logging
 import json
 from fastmot.boundary_detector import BoundaryDetector
+from fastmot.utils.rect import get_bottom_center
 
 LOGGER = logging.getLogger(__name__)
                
@@ -19,7 +20,7 @@ class Counter:
 
         for lp in line_pairs:
             c = lp['coordinates']
-            coords = ((int(c['x0']), int(c['y0'])), (int(c['x1']), int(c['y1'])))
+            coords = ((int(c['x0'] * frame_size[0]), int(c['y0'] * frame_size[1])), (int(c['x1'] * frame_size[0]), int(c['y1'] * frame_size[1])))
             efl = lp['properties']['enter_from_left']
             sf = lp['properties']['suppression_frames']
             bd = BoundaryDetector(coords, enter_from_left = efl, suppression_frames=sf)
