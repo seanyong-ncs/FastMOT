@@ -4,7 +4,7 @@ import logging
 import json
 
 from fastmot.utils.visualization import get_color
-from fastmot.utils.rect import get_bottom_center
+
 
 LOGGER = logging.getLogger(__name__)
 
