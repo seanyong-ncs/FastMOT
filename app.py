@@ -29,6 +29,9 @@ def main():
     optional.add_argument('-c', '--config', metavar="FILE",
                           default=Path(__file__).parent / 'cfg' / 'mot.json',
                           help='path to JSON configuration file')
+    optional.add_argument('-b', '--boundary_cfg', metavar="FILE",
+                          default=Path(__file__).parent / 'cfg' / 'boundary.json',
+                          help='path to boundary list JSON configuration file')
     optional.add_argument('-l', '--labels', metavar="FILE",
                           help='path to label names (e.g. coco.names)')
     optional.add_argument('-o', '--output-uri', metavar="URI",
@@ -65,10 +68,11 @@ def main():
             fastmot.models.set_label_map(label_map)
 
     stream = fastmot.VideoIO(config.resize_to, args.input_uri, args.output_uri, **vars(config.stream_cfg))
-    counter = fastmot.Counter()
+    counter = fastmot.Counter(boundary_cfg_path=args.boundary_cfg)
 
     mot = None
     txt = None
+
     if args.mot:
         draw = args.show or args.output_uri is not None
         mot = fastmot.MOT(config.resize_to, **vars(config.mot_cfg), draw=draw)
@@ -100,15 +104,14 @@ def main():
                             txt.write(f'{mot.frame_count},{track.trk_id},{tl[0]:.6f},{tl[1]:.6f},'
                                       f'{w:.6f},{h:.6f},-1,-1,-1\n')
 
-                    # Debug info
-                    # for track in mot.visible_tracks():
-                    #     bottom_center = get_bottom_center(track.tlbr)
-                    #     logger.info(f"{track.trk_id} {bottom_center}")
                     
                 if args.show:
+                    #frame = cv2.resize(frame, (960, 540), interpolation= cv2.INTER_LINEAR)
                     cv2.imshow('Video', frame)
 
-                    if cv2.waitKey(1) & 0xFF == 27:
+
+                    k = cv2.waitKey(1) 
+                    if k == 27:
                         break
                 if args.output_uri is not None:
                     stream.write(frame)
