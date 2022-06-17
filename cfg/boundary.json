@@ -1,0 +1,29 @@
+{
+  "line_pairs": [
+    {
+      "properties": {
+      	"enter_from_left": true,
+        "suppression_frames": 90
+      },
+      "coordinates": {
+        "x0": 579,
+        "y0": 465,
+        "x1": 776,
+        "y1": 450
+      }
+
+    },
+    {
+      "properties": {
+      	"enter_from_left": true,
+        "suppression_frames": 90
+      },
+      "coordinates": {
+        "x0": 539,
+        "y0": 465,
+        "x1": 649,
+        "y1": 650
+      }
+    }
+  ]
+}
